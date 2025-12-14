@@ -60,11 +60,12 @@ class CreateCustomer(graphene.Mutation):
         if errors:
             return CreateCustomer(customer=None, message="Failed to create customer", errors=errors)
 
-        customer = Customer.objects.create(
+        customer = Customer(
             name=input.name,
             email=input.email,
             phone=input.phone
         )
+        customer.save()
         return CreateCustomer(customer=customer, message="Customer created successfully", errors=[])
 
 
@@ -84,11 +85,12 @@ class BulkCreateCustomers(graphene.Mutation):
                         raise ValidationError("Email already exists")
                     if cust.phone and not re.match(r"^\+?\d[\d\-]+$", cust.phone):
                         raise ValidationError("Invalid phone format")
-                    new_customer = Customer.objects.create(
+                    new_customer = Customer(
                         name=cust.name,
                         email=cust.email,
                         phone=cust.phone
                     )
+                    new_customer.save()
                     created.append(new_customer)
                 except Exception as e:
                     errors.append(f"{cust.email}: {str(e)}")
@@ -114,11 +116,12 @@ class CreateProduct(graphene.Mutation):
             if errors:
                 return CreateProduct(product=None, errors=errors)
 
-            product = Product.objects.create(
+            product = Product(
                 name=input.name,
                 price=price,
                 stock=input.stock or 0
             )
+            product.save()
             return CreateProduct(product=product, errors=[])
         except Exception as e:
             return CreateProduct(product=None, errors=[str(e)])
@@ -145,7 +148,8 @@ class CreateOrder(graphene.Mutation):
             return CreateOrder(order=None, errors=errors)
 
         total = sum([Decimal(str(p.price)) for p in products])
-        order = Order.objects.create(customer=customer, total_amount=total)
+        order = Order(customer=customer, total_amount=total)
+        order.save()
         order.products.set(products)
         return CreateOrder(order=order, errors=[])
         
