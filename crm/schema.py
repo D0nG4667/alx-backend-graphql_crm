@@ -5,6 +5,57 @@ from django.db import transaction
 from decimal import Decimal
 import re
 from .models import Customer, Product, Order
+from graphene_django.filter import DjangoFilterConnectionField
+from .filters import CustomerFilter, ProductFilter, OrderFilter
+
+
+# GraphQL Nodes with Filters
+class CustomerNode(DjangoObjectType):
+    class Meta:
+        model = Customer
+        filterset_class = CustomerFilter
+        interfaces = (graphene.relay.Node,)
+
+
+class ProductNode(DjangoObjectType):
+    class Meta:
+        model = Product
+        filterset_class = ProductFilter
+        interfaces = (graphene.relay.Node,)
+
+
+class OrderNode(DjangoObjectType):
+    class Meta:
+        model = Order
+        filterset_class = OrderFilter
+        interfaces = (graphene.relay.Node,)
+
+
+# Filter Input Types
+class CustomerFilterInput(graphene.InputObjectType):
+    nameIcontains = graphene.String()
+    emailIcontains = graphene.String()
+    createdAtGte = graphene.String()
+    createdAtLte = graphene.String()
+    phonePattern = graphene.String()
+
+
+class ProductFilterInput(graphene.InputObjectType):
+    nameIcontains = graphene.String()
+    priceGte = graphene.Float()
+    priceLte = graphene.Float()
+    stockGte = graphene.Int()
+    stockLte = graphene.Int()
+
+
+class OrderFilterInput(graphene.InputObjectType):
+    totalAmountGte = graphene.Float()
+    totalAmountLte = graphene.Float()
+    orderDateGte = graphene.String()
+    orderDateLte = graphene.String()
+    customerName = graphene.String()
+    productName = graphene.String()
+    productId = graphene.ID()
 
 
 # GraphQL Types
@@ -32,7 +83,7 @@ class CustomerInput(graphene.InputObjectType):
 
 class ProductInput(graphene.InputObjectType):
     name = graphene.String(required=True)
-    price = graphene.Float(required=True)   # accept raw number
+    price = graphene.Float(required=True)  # accept raw number
     stock = graphene.Int()
 
 
@@ -58,15 +109,15 @@ class CreateCustomer(graphene.Mutation):
             errors.append("Invalid phone format")
 
         if errors:
-            return CreateCustomer(customer=None, message="Failed to create customer", errors=errors)
+            return CreateCustomer(
+                customer=None, message="Failed to create customer", errors=errors
+            )
 
-        customer = Customer(
-            name=input.name,
-            email=input.email,
-            phone=input.phone
-        )
+        customer = Customer(name=input.name, email=input.email, phone=input.phone)
         customer.save()
-        return CreateCustomer(customer=customer, message="Customer created successfully", errors=[])
+        return CreateCustomer(
+            customer=customer, message="Customer created successfully", errors=[]
+        )
 
 
 class BulkCreateCustomers(graphene.Mutation):
@@ -86,9 +137,7 @@ class BulkCreateCustomers(graphene.Mutation):
                     if cust.phone and not re.match(r"^\+?\d[\d\-]+$", cust.phone):
                         raise ValidationError("Invalid phone format")
                     new_customer = Customer(
-                        name=cust.name,
-                        email=cust.email,
-                        phone=cust.phone
+                        name=cust.name, email=cust.email, phone=cust.phone
                     )
                     new_customer.save()
                     created.append(new_customer)
@@ -116,11 +165,7 @@ class CreateProduct(graphene.Mutation):
             if errors:
                 return CreateProduct(product=None, errors=errors)
 
-            product = Product(
-                name=input.name,
-                price=price,
-                stock=input.stock or 0
-            )
+            product = Product(name=input.name, price=price, stock=input.stock or 0)
             product.save()
             return CreateProduct(product=product, errors=[])
         except Exception as e:
@@ -152,7 +197,7 @@ class CreateOrder(graphene.Mutation):
         order.save()
         order.products.set(products)
         return CreateOrder(order=order, errors=[])
-        
+
 
 # Root Mutation
 class Mutation(graphene.ObjectType):
@@ -164,15 +209,42 @@ class Mutation(graphene.ObjectType):
 
 # Root Query
 class Query(graphene.ObjectType):
-    customers = graphene.List(CustomerType)
-    products = graphene.List(ProductType)
-    orders = graphene.List(OrderType)
+    all_customers = graphene.ConnectionField(
+        CustomerNode._meta.connection,
+        filter=CustomerFilterInput(),
+        order_by=graphene.List(of_type=graphene.String),
+    )
+    all_products = graphene.ConnectionField(
+        ProductNode._meta.connection,
+        filter=ProductFilterInput(),
+        order_by=graphene.List(of_type=graphene.String),
+    )
+    all_orders = graphene.ConnectionField(
+        OrderNode._meta.connection,
+        filter=OrderFilterInput(),
+        order_by=graphene.List(of_type=graphene.String),
+    )
 
-    def resolve_customers(self, info):
-        return Customer.objects.all()
+    def resolve_all_customers(self, info, filter=None, order_by=None, **kwargs):
+        qs = Customer.objects.all()
+        if filter:
+            qs = CustomerFilter(data=filter, queryset=qs).qs
+        if order_by:
+            qs = qs.order_by(*order_by)
+        return qs
 
-    def resolve_products(self, info):
-        return Product.objects.all()
+    def resolve_all_products(self, info, filter=None, order_by=None, **kwargs):
+        qs = Product.objects.all()
+        if filter:
+            qs = ProductFilter(data=filter, queryset=qs).qs
+        if order_by:
+            qs = qs.order_by(*order_by)
+        return qs
 
-    def resolve_orders(self, info):
-        return Order.objects.all()
+    def resolve_all_orders(self, info, filter=None, order_by=None, **kwargs):
+        qs = Order.objects.all()
+        if filter:
+            qs = OrderFilter(data=filter, queryset=qs).qs
+        if order_by:
+            qs = qs.order_by(*order_by)
+        return qs
