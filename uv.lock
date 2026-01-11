@@ -124,6 +124,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "django" },
+    { name = "django-crontab" },
     { name = "django-filter" },
     { name = "gql", extra = ["all"] },
     { name = "graphene-django" },
@@ -132,6 +133,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "django", specifier = ">=6.0" },
+    { name = "django-crontab", specifier = ">=0.7.1" },
     { name = "django-filter", specifier = ">=25.2" },
     { name = "gql", extras = ["all"], specifier = ">=4.0.0" },
     { name = "graphene-django", specifier = ">=3.2.3" },
@@ -270,6 +272,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/15/75/19762bfc4ea556c30
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/ae/f19e24789a5ad852670d6885f5480f5e5895576945fcc01817dfd9bc002a/django-6.0-py3-none-any.whl", hash = "sha256:1cc2c7344303bbfb7ba5070487c17f7fc0b7174bbb0a38cebf03c675f5f19b6d", size = 8339181 },
 ]
+
+[[package]]
+name = "django-crontab"
+version = "0.7.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/37/bd/a122ba96167f5dfab70a58ca22fa046b7ef1ebad9ff026f7831bd6c2a49c/django-crontab-0.7.1.tar.gz", hash = "sha256:1201810a212460aaaa48eb6a766738740daf42c1a4f6aafecfb1525036929236", size = 7089 }
 
 [[package]]
 name = "django-filter"

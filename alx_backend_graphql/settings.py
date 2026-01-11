@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # Third-party
     "graphene_django",
     "django_filters",
+    "django_crontab",
     # Local apps
     "crm",
 ]
@@ -120,3 +121,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+# Cron Jobs Configuration
+CRONJOBS = [
+    ("*/5 * * * *", "crm.cron.log_crm_heartbeat"),
+]
