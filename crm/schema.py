@@ -5,6 +5,7 @@ from django.db import transaction
 from decimal import Decimal
 import re
 from .models import Customer, Product, Order
+from crm.models import Product
 from graphene_django.filter import DjangoFilterConnectionField
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 
